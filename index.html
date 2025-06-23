@@ -2,21 +2,73 @@
 <html lang="sr">
 <head>
   <meta charset="UTF-8">
-  <title>Pogodi Metu</title>
+  <title>Karneval Shot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
     body {
       margin: 0;
       overflow: hidden;
-      background: #222;
       font-family: sans-serif;
-      color: white;
-      text-align: center;
     }
     canvas {
-      display: block;
-      margin: 0 auto;
+      display: none;
       background: #444;
+    }
+    #ui, #modeSelect, #startScreen {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      color: white;
+      z-index: 10;
+    }
+    #startScreen {
+      background: repeating-linear-gradient(45deg, #d40000, #d40000 40px, #fff 40px, #fff 80px);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    #startScreen h1 {
+      font-size: 48px;
+      margin-top: 20px;
+    }
+    #startScreen button {
+      font-size: 28px;
+      padding: 15px 40px;
+      margin-bottom: 40px;
+      background: darkred;
+      color: white;
+      border: none;
+      border-radius: 12px;
+    }
+
+    #modeSelect {
+      top: 0;
+      background: #222;
+      height: 100vh;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #modeSelect h2 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+    .modeButton {
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 24px;
+      background: #0a74da;
+      color: white;
+      border: none;
+      border-radius: 10px;
+    }
+
+    #ui {
+      display: none;
     }
     #shootButton {
       position: absolute;
@@ -33,6 +85,7 @@
     #score, #highscore, #lives {
       position: absolute;
       font-size: 24px;
+      color: white;
     }
     #score {
       top: 10px;
@@ -50,11 +103,23 @@
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
-  <div id="lives">❤️❤️❤️</div>
-  <div id="score">Pogodaka: 0</div>
-  <div id="highscore">Rekord: 0</div>
-  <button id="shootButton">PUCAJ</button>
+  <div id="startScreen">
+    <h1>Karneval Shot</h1>
+    <button onclick="showModeSelect()">PLAY</button>
+  </div>
+
+  <div id="modeSelect">
+    <h2>Game Modes</h2>
+    <button class="modeButton" onclick="startGame()">Get Target</button>
+  </div>
+
+  <div id="ui">
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <div id="lives">❤️❤️❤️</div>
+    <div id="score">Pogodaka: 0</div>
+    <div id="highscore">Rekord: 0</div>
+    <button id="shootButton">PUCAJ</button>
+  </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -64,10 +129,15 @@
     const highscoreDisplay = document.getElementById('highscore');
     const livesDisplay = document.getElementById('lives');
 
+    const startScreen = document.getElementById('startScreen');
+    const modeSelect = document.getElementById('modeSelect');
+    const ui = document.getElementById('ui');
+
     let score = 0;
     let highscore = 0;
     let lives = 3;
     let canShoot = true;
+    let isGameRunning = false;
 
     // META
     let targetX = 0;
@@ -76,6 +146,20 @@
     let targetHeight = 70;
     let direction = 1;
     let speed = 2;
+
+    function showModeSelect() {
+      startScreen.style.display = "none";
+      modeSelect.style.display = "flex";
+    }
+
+    function startGame() {
+      modeSelect.style.display = "none";
+      ui.style.display = "block";
+      canvas.style.display = "block";
+      isGameRunning = true;
+      updateUI();
+      requestAnimationFrame(gameLoop);
+    }
 
     function resetGame() {
       if (score > highscore) {
@@ -138,6 +222,7 @@
     }
 
     function gameLoop() {
+      if (!isGameRunning) return;
       update();
       draw();
       requestAnimationFrame(gameLoop);
@@ -172,9 +257,6 @@
 
       updateUI();
     });
-
-    updateUI();
-    gameLoop();
   </script>
 </body>
 </html>
