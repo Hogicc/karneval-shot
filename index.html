@@ -59,14 +59,13 @@
     let targetWidth = 30;
     let targetHeight = 70;
     let direction = 1;
+    let speed = 2; // Početna brzina
 
     function drawTarget() {
       ctx.fillStyle = 'yellow';
-
       // Telo
       ctx.fillRect(targetX, targetY, targetWidth, targetHeight);
-
-      // Glava (krug)
+      // Glava
       ctx.beginPath();
       ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2);
       ctx.fill();
@@ -109,7 +108,7 @@
     }
 
     function update() {
-      targetX += direction * 2;
+      targetX += direction * speed;
       if (targetX + targetWidth > canvas.width || targetX < 0) {
         direction *= -1;
       }
@@ -143,6 +142,11 @@
       ) {
         score++;
         scoreDisplay.textContent = `Pogodaka: ${score}`;
+
+        // 🟡 Ubrzaj na svakih 10 pogodaka
+        if (score % 10 === 0) {
+          speed += 0.5;
+        }
       }
     });
 
