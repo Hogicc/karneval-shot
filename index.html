@@ -5,36 +5,43 @@
   <title>Karneval Shot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <style>
-    body {
+    * {
       margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
+      padding: 0;
+      box-sizing: border-box;
     }
+    body, html {
+      width: 100%;
+      height: 100%;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
     canvas {
       display: none;
       background: #444;
     }
 
-    /* 🎪 Početni ekran */
     #startScreen {
-      background: url('https://i.imgur.com/l0Lk4Xt.png') no-repeat center center;
-      background-size: contain;
-      background-color: #000;
-      height: 100vh;
-      width: 100vw;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: url('https://raw.githubusercontent.com/hogicc/PlaneGame/main/assets/tent-bg.png') center center no-repeat;
+      background-size: cover;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       align-items: center;
-      padding: 40px 20px;
-      text-align: center;
       color: white;
+      padding: 40px 20px;
     }
+
     #startScreen h1 {
       font-size: 48px;
-      margin-top: 40px;
       text-shadow: 2px 2px black;
+      margin-top: 20px;
     }
+
     #startScreen button {
       font-size: 28px;
       padding: 15px 40px;
@@ -45,22 +52,23 @@
       border-radius: 12px;
     }
 
-    /* 🎯 Izbor moda */
     #modeSelect {
-      top: 0;
+      position: absolute;
+      width: 100%;
+      height: 100%;
       background: #222;
-      height: 100vh;
-      width: 100vw;
+      color: white;
       display: none;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      color: white;
     }
+
     #modeSelect h2 {
       font-size: 36px;
       margin-bottom: 20px;
     }
+
     .modeButton {
       padding: 15px 30px;
       margin: 10px;
@@ -71,10 +79,10 @@
       border-radius: 10px;
     }
 
-    /* 🎮 UI u igri */
     #ui {
       display: none;
     }
+
     #shootButton {
       position: absolute;
       bottom: 30px;
@@ -86,21 +94,27 @@
       color: white;
       border: none;
       border-radius: 10px;
+      z-index: 5;
     }
+
     #score, #highscore, #lives {
       position: absolute;
       font-size: 24px;
       color: white;
+      z-index: 5;
     }
+
     #score {
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
     }
+
     #highscore {
       top: 10px;
       right: 10px;
     }
+
     #lives {
       top: 10px;
       left: 10px;
@@ -120,9 +134,9 @@
     <button class="modeButton" onclick="startGame()">Get Target</button>
   </div>
 
-  <!-- 🎮 UI igranja -->
+  <!-- 🎮 UI igre -->
   <div id="ui">
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <div id="lives">❤️❤️❤️</div>
     <div id="score">Pogodaka: 0</div>
     <div id="highscore">Rekord: 0</div>
@@ -147,13 +161,18 @@
     let canShoot = true;
     let isGameRunning = false;
 
-    // META
     let targetX = 0;
     let targetY = 200;
     let targetWidth = 30;
     let targetHeight = 70;
     let direction = 1;
     let speed = 2;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
 
     function showModeSelect() {
       startScreen.style.display = "none";
@@ -164,8 +183,9 @@
       modeSelect.style.display = "none";
       ui.style.display = "block";
       canvas.style.display = "block";
+      resizeCanvas();
       isGameRunning = true;
-      resetGame(); // <== osigurava reset i pokretanje
+      resetGame();
       requestAnimationFrame(gameLoop);
     }
 
@@ -179,7 +199,7 @@
       targetX = 0;
       direction = 1;
       lives = 3;
-      isGameRunning = true; // <== neophodno za ponovni start
+      isGameRunning = true;
       updateUI();
     }
 
@@ -190,9 +210,9 @@
 
     function drawTarget() {
       ctx.fillStyle = 'yellow';
-      ctx.fillRect(targetX, targetY, targetWidth, targetHeight); // Telo
+      ctx.fillRect(targetX, targetY, targetWidth, targetHeight);
       ctx.beginPath();
-      ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2); // Glava
+      ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -202,15 +222,11 @@
       ctx.strokeStyle = 'red';
       ctx.lineWidth = 2;
 
-      // Horizontalne linije
       ctx.beginPath(); ctx.moveTo(centerX - 20, centerY); ctx.lineTo(centerX - 5, centerY); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(centerX + 5, centerY); ctx.lineTo(centerX + 20, centerY); ctx.stroke();
-
-      // Vertikalne linije
       ctx.beginPath(); ctx.moveTo(centerX, centerY - 20); ctx.lineTo(centerX, centerY - 5); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(centerX, centerY + 5); ctx.lineTo(centerX, centerY + 20); ctx.stroke();
 
-      // Tačka u centru
       ctx.beginPath();
       ctx.arc(centerX, centerY, 2.5, 0, Math.PI * 2);
       ctx.fillStyle = 'red';
