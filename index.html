@@ -26,13 +26,7 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      background: repeating-linear-gradient(
-        45deg,
-        red,
-        red 40px,
-        white 40px,
-        white 80px
-      );
+      background: repeating-linear-gradient(45deg, red, red 40px, white 40px, white 80px);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -133,7 +127,8 @@
 
   <div id="modeSelect">
     <h2>Game Modes</h2>
-    <button class="modeButton" onclick="startGame()">Get Target</button>
+    <button class="modeButton" onclick="startGame('target')">Get Target</button>
+    <button class="modeButton" onclick="startGame('balloon')">Balloon Pop</button>
   </div>
 
   <div id="ui">
@@ -161,6 +156,7 @@
     let lives = 3;
     let canShoot = true;
     let isGameRunning = false;
+    let gameMode = "target";
 
     let targetX = 0;
     let targetY = 200;
@@ -169,6 +165,14 @@
     let direction = 1;
     let speed = 2;
 
+    let balloon = null;
+    let balloonTimer = 0;
+
+    if (localStorage.getItem("karneval_rekord")) {
+      highscore = parseInt(localStorage.getItem("karneval_rekord"));
+      highscoreDisplay.textContent = `Rekord: ${highscore}`;
+    }
+
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -176,18 +180,13 @@
 
     window.addEventListener("resize", resizeCanvas);
 
-    // ✅ Učitaj prethodni rekord ako postoji
-    if (localStorage.getItem("karneval_rekord")) {
-      highscore = parseInt(localStorage.getItem("karneval_rekord"));
-      highscoreDisplay.textContent = `Rekord: ${highscore}`;
-    }
-
     function showModeSelect() {
       startScreen.style.display = "none";
       modeSelect.style.display = "flex";
     }
 
-    function startGame() {
+    function startGame(mode) {
+      gameMode = mode;
       modeSelect.style.display = "none";
       ui.style.display = "block";
       canvas.style.display = "block";
@@ -200,29 +199,21 @@
     function resetGame() {
       if (score > highscore) {
         highscore = score;
+        localStorage.setItem("karneval_rekord", highscore);
         highscoreDisplay.textContent = `Rekord: ${highscore}`;
-        localStorage.setItem("karneval_rekord", highscore); // ✅ Sačuvaj rekord
       }
       score = 0;
       speed = 2;
       targetX = 0;
       direction = 1;
       lives = 3;
-      isGameRunning = true;
+      balloon = null;
       updateUI();
     }
 
     function updateUI() {
       scoreDisplay.textContent = `Pogodaka: ${score}`;
       livesDisplay.textContent = "❤️".repeat(lives);
-    }
-
-    function drawTarget() {
-      ctx.fillStyle = "yellow";
-      ctx.fillRect(targetX, targetY, targetWidth, targetHeight);
-      ctx.beginPath();
-      ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2);
-      ctx.fill();
     }
 
     function drawCrosshair() {
@@ -257,28 +248,60 @@
       ctx.fill();
     }
 
-    function update() {
-      targetX += direction * speed;
-      if (targetX + targetWidth > canvas.width || targetX < 0) {
-        direction *= -1;
-      }
+    function drawTarget() {
+      ctx.fillStyle = "yellow";
+      ctx.fillRect(targetX, targetY, targetWidth, targetHeight);
+      ctx.beginPath();
+      ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawTarget();
-      drawCrosshair();
+    function drawBalloon() {
+      if (!balloon) return;
+      ctx.fillStyle = "pink";
+      ctx.beginPath();
+      ctx.arc(balloon.x, balloon.y, balloon.r, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    function gameLoop() {
+    function spawnBalloon() {
+      const r = 30;
+      const x = r + Math.random() * (canvas.width - 2 * r);
+      const y = r + Math.random() * (canvas.height - 2 * r);
+      balloon = { x, y, r };
+    }
+
+    canvas.addEventListener("click", (e) => {
       if (!isGameRunning) return;
-      update();
-      draw();
-      requestAnimationFrame(gameLoop);
-    }
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (gameMode === "balloon") {
+        if (balloon) {
+          const dx = x - balloon.x;
+          const dy = y - balloon.y;
+          if (Math.sqrt(dx * dx + dy * dy) <= balloon.r) {
+            score++;
+            balloon = null;
+          } else {
+            lives--;
+          }
+        } else {
+          lives--;
+        }
+        if (lives <= 0) {
+          isGameRunning = false;
+          resetGame();
+          return;
+        }
+        updateUI();
+      }
+    });
 
     shootButton.addEventListener("click", () => {
-      if (!canShoot || !isGameRunning) return;
+      if (!canShoot || !isGameRunning || gameMode !== "target") return;
       canShoot = false;
       setTimeout(() => (canShoot = true), 300);
 
@@ -305,6 +328,37 @@
 
       updateUI();
     });
+
+    function update() {
+      if (gameMode === "target") {
+        targetX += direction * speed;
+        if (targetX + targetWidth > canvas.width || targetX < 0) {
+          direction *= -1;
+        }
+      } else if (gameMode === "balloon") {
+        if (!balloon && Date.now() - balloonTimer > 800) {
+          spawnBalloon();
+          balloonTimer = Date.now();
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (gameMode === "target") {
+        drawTarget();
+        drawCrosshair();
+      } else if (gameMode === "balloon") {
+        drawBalloon();
+      }
+    }
+
+    function gameLoop() {
+      if (!isGameRunning) return;
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
   </script>
 </body>
 </html>
