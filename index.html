@@ -5,11 +5,7 @@
   <title>Karneval Shot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       width: 100%;
       height: 100%;
@@ -89,9 +85,7 @@
       border-radius: 10px;
     }
 
-    #ui {
-      display: none;
-    }
+    #ui { display: none; }
 
     #shootButton {
       position: absolute;
@@ -182,6 +176,12 @@
 
     window.addEventListener("resize", resizeCanvas);
 
+    // ✅ Učitaj prethodni rekord ako postoji
+    if (localStorage.getItem("karneval_rekord")) {
+      highscore = parseInt(localStorage.getItem("karneval_rekord"));
+      highscoreDisplay.textContent = `Rekord: ${highscore}`;
+    }
+
     function showModeSelect() {
       startScreen.style.display = "none";
       modeSelect.style.display = "flex";
@@ -201,6 +201,7 @@
       if (score > highscore) {
         highscore = score;
         highscoreDisplay.textContent = `Rekord: ${highscore}`;
+        localStorage.setItem("karneval_rekord", highscore); // ✅ Sačuvaj rekord
       }
       score = 0;
       speed = 2;
