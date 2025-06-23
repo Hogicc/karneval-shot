@@ -30,18 +30,30 @@
       border: none;
       border-radius: 10px;
     }
-    #score {
+    #score, #highscore, #lives {
       position: absolute;
+      font-size: 24px;
+    }
+    #score {
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 24px;
+    }
+    #highscore {
+      top: 10px;
+      right: 10px;
+    }
+    #lives {
+      top: 10px;
+      left: 10px;
     }
   </style>
 </head>
 <body>
   <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="lives">❤️❤️❤️</div>
   <div id="score">Pogodaka: 0</div>
+  <div id="highscore">Rekord: 0</div>
   <button id="shootButton">PUCAJ</button>
 
   <script>
@@ -49,8 +61,12 @@
     const ctx = canvas.getContext('2d');
     const shootButton = document.getElementById('shootButton');
     const scoreDisplay = document.getElementById('score');
+    const highscoreDisplay = document.getElementById('highscore');
+    const livesDisplay = document.getElementById('lives');
 
     let score = 0;
+    let highscore = 0;
+    let lives = 3;
     let canShoot = true;
 
     // META
@@ -59,7 +75,25 @@
     let targetWidth = 30;
     let targetHeight = 70;
     let direction = 1;
-    let speed = 2; // Početna brzina
+    let speed = 2;
+
+    function resetGame() {
+      if (score > highscore) {
+        highscore = score;
+        highscoreDisplay.textContent = `Rekord: ${highscore}`;
+      }
+      score = 0;
+      speed = 2;
+      targetX = 0;
+      direction = 1;
+      lives = 3;
+      updateUI();
+    }
+
+    function updateUI() {
+      scoreDisplay.textContent = `Pogodaka: ${score}`;
+      livesDisplay.textContent = '❤️'.repeat(lives);
+    }
 
     function drawTarget() {
       ctx.fillStyle = 'yellow';
@@ -117,22 +151,29 @@
       const crossX = canvas.width / 2;
       const crossY = targetY + targetHeight / 2;
 
-      if (
+      const isHit =
         crossX >= targetX &&
         crossX <= targetX + targetWidth &&
         crossY >= targetY &&
-        crossY <= targetY + targetHeight
-      ) {
-        score++;
-        scoreDisplay.textContent = `Pogodaka: ${score}`;
+        crossY <= targetY + targetHeight;
 
-        // 🟡 Ubrzanje sa +1
+      if (isHit) {
+        score++;
         if (score % 10 === 0) {
           speed += 1;
         }
+      } else {
+        lives--;
+        if (lives <= 0) {
+          resetGame();
+          return;
+        }
       }
+
+      updateUI();
     });
 
+    updateUI();
     gameLoop();
   </script>
 </body>
