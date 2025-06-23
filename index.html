@@ -63,42 +63,25 @@
 
     function drawTarget() {
       ctx.fillStyle = 'yellow';
-      // Telo
-      ctx.fillRect(targetX, targetY, targetWidth, targetHeight);
-      // Glava
+      ctx.fillRect(targetX, targetY, targetWidth, targetHeight); // Telo
       ctx.beginPath();
-      ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2);
+      ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2); // Glava
       ctx.fill();
     }
 
     function drawCrosshair() {
       const centerX = canvas.width / 2;
       const centerY = targetY + targetHeight / 2;
-
       ctx.strokeStyle = 'red';
       ctx.lineWidth = 2;
 
       // Horizontalne linije
-      ctx.beginPath();
-      ctx.moveTo(centerX - 20, centerY);
-      ctx.lineTo(centerX - 5, centerY);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(centerX + 5, centerY);
-      ctx.lineTo(centerX + 20, centerY);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(centerX - 20, centerY); ctx.lineTo(centerX - 5, centerY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(centerX + 5, centerY); ctx.lineTo(centerX + 20, centerY); ctx.stroke();
 
       // Vertikalne linije
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY - 20);
-      ctx.lineTo(centerX, centerY - 5);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY + 5);
-      ctx.lineTo(centerX, centerY + 20);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(centerX, centerY - 20); ctx.lineTo(centerX, centerY - 5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(centerX, centerY + 5); ctx.lineTo(centerX, centerY + 20); ctx.stroke();
 
       // Tačka u centru
       ctx.beginPath();
@@ -143,9 +126,9 @@
         score++;
         scoreDisplay.textContent = `Pogodaka: ${score}`;
 
-        // 🟡 Ubrzaj na svakih 10 pogodaka
+        // 🟡 Ubrzanje sa +1
         if (score % 10 === 0) {
-          speed += 0.5;
+          speed += 1;
         }
       }
     });
