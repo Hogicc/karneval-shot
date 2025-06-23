@@ -50,33 +50,62 @@
     const shootButton = document.getElementById('shootButton');
     const scoreDisplay = document.getElementById('score');
 
-    let targetX = 0;
-    let targetY = 200;
-    let targetWidth = 50;
-    let targetHeight = 50;
-    let direction = 1; // 1 = right, -1 = left
-
-    let crosshairX = canvas.width / 2 - 25;
-    let crosshairY = targetY;
-
     let score = 0;
     let canShoot = true;
 
+    // META
+    let targetX = 0;
+    let targetY = 200;
+    let targetWidth = 30;
+    let targetHeight = 70;
+    let direction = 1;
+
     function drawTarget() {
       ctx.fillStyle = 'yellow';
+
+      // Telo
       ctx.fillRect(targetX, targetY, targetWidth, targetHeight);
+
+      // Glava (krug)
+      ctx.beginPath();
+      ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     function drawCrosshair() {
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(crosshairX, crosshairY, targetWidth, targetHeight);
-    }
+      const centerX = canvas.width / 2;
+      const centerY = targetY + targetHeight / 2;
 
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawTarget();
-      drawCrosshair();
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 2;
+
+      // Horizontalne linije
+      ctx.beginPath();
+      ctx.moveTo(centerX - 20, centerY);
+      ctx.lineTo(centerX - 5, centerY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX + 5, centerY);
+      ctx.lineTo(centerX + 20, centerY);
+      ctx.stroke();
+
+      // Vertikalne linije
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - 20);
+      ctx.lineTo(centerX, centerY - 5);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY + 5);
+      ctx.lineTo(centerX, centerY + 20);
+      ctx.stroke();
+
+      // Tačka u centru
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'red';
+      ctx.fill();
     }
 
     function update() {
@@ -84,6 +113,12 @@
       if (targetX + targetWidth > canvas.width || targetX < 0) {
         direction *= -1;
       }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawTarget();
+      drawCrosshair();
     }
 
     function gameLoop() {
@@ -94,13 +129,18 @@
 
     shootButton.addEventListener('click', () => {
       if (!canShoot) return;
-
-      // Debounce: blokiraj 300ms
       canShoot = false;
       setTimeout(() => canShoot = true, 300);
 
-      // Proveri da li je meta u kroseru
-      if (Math.abs(targetX - crosshairX) < 10) {
+      const crossX = canvas.width / 2;
+      const crossY = targetY + targetHeight / 2;
+
+      if (
+        crossX >= targetX &&
+        crossX <= targetX + targetWidth &&
+        crossY >= targetY &&
+        crossY <= targetY + targetHeight
+      ) {
         score++;
         scoreDisplay.textContent = `Pogodaka: ${score}`;
       }
