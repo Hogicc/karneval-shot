@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <title>Pogodi Metu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #222;
+      font-family: sans-serif;
+      color: white;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #444;
+    }
+    #shootButton {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 30px;
+      font-size: 24px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 10px;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <div id="score">Pogodaka: 0</div>
+  <button id="shootButton">PUCAJ</button>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const shootButton = document.getElementById('shootButton');
+    const scoreDisplay = document.getElementById('score');
+
+    let targetX = 0;
+    let targetY = 200;
+    let targetWidth = 50;
+    let targetHeight = 50;
+    let direction = 1; // 1 = right, -1 = left
+
+    let crosshairX = canvas.width / 2 - 25;
+    let crosshairY = targetY;
+
+    let score = 0;
+    let canShoot = true;
+
+    function drawTarget() {
+      ctx.fillStyle = 'yellow';
+      ctx.fillRect(targetX, targetY, targetWidth, targetHeight);
+    }
+
+    function drawCrosshair() {
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(crosshairX, crosshairY, targetWidth, targetHeight);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawTarget();
+      drawCrosshair();
+    }
+
+    function update() {
+      targetX += direction * 2;
+      if (targetX + targetWidth > canvas.width || targetX < 0) {
+        direction *= -1;
+      }
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    shootButton.addEventListener('click', () => {
+      if (!canShoot) return;
+
+      // Debounce: blokiraj 300ms
+      canShoot = false;
+      setTimeout(() => canShoot = true, 300);
+
+      // Proveri da li je meta u kroseru
+      if (Math.abs(targetX - crosshairX) < 10) {
+        score++;
+        scoreDisplay.textContent = `Pogodaka: ${score}`;
+      }
+    });
+
+    gameLoop();
+  </script>
+</body>
+</html>
