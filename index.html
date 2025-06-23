@@ -50,6 +50,7 @@
       color: white;
       border: none;
       border-radius: 12px;
+      cursor: pointer;
     }
 
     #modeSelect {
@@ -77,6 +78,7 @@
       color: white;
       border: none;
       border-radius: 10px;
+      cursor: pointer;
     }
 
     #ui { display: none; }
@@ -90,6 +92,8 @@
       border: none;
       border-radius: 10px;
       z-index: 5;
+      cursor: pointer;
+      user-select: none;
     }
 
     #shootButton {
@@ -108,6 +112,7 @@
       font-size: 24px;
       color: white;
       z-index: 5;
+      user-select: none;
     }
 
     #score {
@@ -155,7 +160,264 @@
   </div>
 
   <script>
-    // sve funkcije ostaju iste...
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const shootButton = document.getElementById("shootButton");
+    const scoreDisplay = document.getElementById("score");
+    const highscoreDisplay = document.getElementById("highscore");
+    const livesDisplay = document.getElementById("lives");
+    const timerDisplay = document.getElementById("timer");
+
+    const startScreen = document.getElementById("startScreen");
+    const modeSelect = document.getElementById("modeSelect");
+    const ui = document.getElementById("ui");
+
+    let score = 0;
+    let highscore = 0;
+    let lives = 3;
+    let canShoot = true;
+    let isGameRunning = false;
+    let gameMode = "target";
+
+    let targetX = 0;
+    let targetY = 200;
+    let targetWidth = 30;
+    let targetHeight = 70;
+    let direction = 1;
+    let speed = 2;
+
+    let balloon = null;
+    let balloonTimer = 0;
+    let timer = 120;
+    let timerInterval;
+
+    // Ucitaj rekord iz localStorage ako postoji
+    if (localStorage.getItem("karneval_rekord")) {
+      highscore = parseInt(localStorage.getItem("karneval_rekord"));
+      highscoreDisplay.textContent = `Rekord: ${highscore}`;
+    }
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+
+    function showModeSelect() {
+      startScreen.style.display = "none";
+      modeSelect.style.display = "flex";
+    }
+
+    function startGame(mode) {
+      gameMode = mode;
+      modeSelect.style.display = "none";
+      ui.style.display = "block";
+      canvas.style.display = "block";
+      resizeCanvas();
+      resetGame();
+      isGameRunning = true;
+      if (gameMode === "balloon") {
+        timer = 120;
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+          timer--;
+          updateTimerDisplay();
+          if (timer <= 0) {
+            clearInterval(timerInterval);
+            isGameRunning = false;
+            alert("Kraj igre! Tvoj rezultat: " + score);
+            returnToMenu();
+          }
+        }, 1000);
+      }
+      requestAnimationFrame(gameLoop);
+    }
+
+    function resetGame() {
+      if (score > highscore) {
+        highscore = score;
+        localStorage.setItem("karneval_rekord", highscore);
+        highscoreDisplay.textContent = `Rekord: ${highscore}`;
+      }
+      score = 0;
+      speed = 2;
+      targetX = 0;
+      direction = 1;
+      lives = 3;
+      balloon = null;
+      clearInterval(timerInterval);
+      updateUI();
+    }
+
+    function updateUI() {
+      scoreDisplay.textContent = `Pogodaka: ${score}`;
+      livesDisplay.textContent = "❤️".repeat(lives);
+    }
+
+    function updateTimerDisplay() {
+      const minutes = String(Math.floor(timer / 60)).padStart(2, '0');
+      const seconds = String(timer % 60).padStart(2, '0');
+      timerDisplay.textContent = `${minutes}:${seconds}`;
+    }
+
+    function drawCrosshair() {
+      const centerX = canvas.width / 2;
+      const centerY = targetY + targetHeight / 2;
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX - 20, centerY);
+      ctx.lineTo(centerX - 5, centerY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX + 5, centerY);
+      ctx.lineTo(centerX + 20, centerY);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - 20);
+      ctx.lineTo(centerX, centerY - 5);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY + 5);
+      ctx.lineTo(centerX, centerY + 20);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = "red";
+      ctx.fill();
+    }
+
+    function drawTarget() {
+      ctx.fillStyle = "yellow";
+      ctx.fillRect(targetX, targetY, targetWidth, targetHeight);
+      ctx.beginPath();
+      ctx.arc(targetX + targetWidth / 2, targetY - 15, 15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBalloon() {
+      if (!balloon) return;
+      ctx.fillStyle = balloon.bad ? "black" : "pink";
+      ctx.beginPath();
+      ctx.arc(balloon.x, balloon.y, balloon.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function spawnBalloon() {
+      const r = 30;
+      const x = r + Math.random() * (canvas.width - 2 * r);
+      const y = r + Math.random() * (canvas.height - 2 * r);
+      const bad = Math.random() < 0.2; // 20% šansa za negativni balon
+      balloon = { x, y, r, bad };
+      if (bad) {
+        setTimeout(() => {
+          if (balloon && balloon.bad) balloon = null;
+        }, 3000);
+      }
+    }
+
+    canvas.addEventListener("click", (e) => {
+      if (!isGameRunning) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (gameMode === "balloon") {
+        if (balloon) {
+          const dx = x - balloon.x;
+          const dy = y - balloon.y;
+          if (Math.sqrt(dx * dx + dy * dy) <= balloon.r) {
+            if (balloon.bad) {
+              score = Math.max(0, score - 1);
+            } else {
+              score++;
+            }
+            balloon = null;
+          } else {
+            lives--;
+          }
+        } else {
+          lives--;
+        }
+        if (lives <= 0) {
+          alert("Izgubio si! Tvoj rezultat: " + score);
+          isGameRunning = false;
+          resetGame();
+          returnToMenu();
+          return;
+        }
+        updateUI();
+      }
+    });
+
+    shootButton.addEventListener("click", () => {
+      if (!canShoot || !isGameRunning || gameMode !== "target") return;
+      canShoot = false;
+      setTimeout(() => (canShoot = true), 300);
+
+      const crossX = canvas.width / 2;
+      const crossY = targetY + targetHeight / 2;
+
+      const isHit =
+        crossX >= targetX &&
+        crossX <= targetX + targetWidth &&
+        crossY >= targetY &&
+        crossY <= targetY + targetHeight;
+
+      if (isHit) {
+        score++;
+        if (score % 10 === 0) speed += 1;
+      } else {
+        lives--;
+        if (lives <= 0) {
+          alert("Izgubio si! Tvoj rezultat: " + score);
+          isGameRunning = false;
+          resetGame();
+          returnToMenu();
+          return;
+        }
+      }
+
+      updateUI();
+    });
+
+    function update() {
+      if (gameMode === "target") {
+        targetX += direction * speed;
+        if (targetX + targetWidth > canvas.width || targetX < 0) {
+          direction *= -1;
+        }
+      } else if (gameMode === "balloon") {
+        if (!balloon && Date.now() - balloonTimer > 800) {
+          spawnBalloon();
+          balloonTimer = Date.now();
+        }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (gameMode === "target") {
+        drawTarget();
+        drawCrosshair();
+      } else if (gameMode === "balloon") {
+        drawBalloon();
+      }
+    }
+
+    function gameLoop() {
+      if (!isGameRunning) return;
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
 
     function returnToMenu() {
       isGameRunning = false;
@@ -163,9 +425,9 @@
       ui.style.display = "none";
       canvas.style.display = "none";
       modeSelect.style.display = "flex";
+      score = 0;
+      updateUI();
     }
-
-    // ostatak skripte ostaje isti...
   </script>
 </body>
 </html>
